@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Local test artifacts
+*.zip
+*.json
+bad_cover.png
+good_cover.jpg
+sample_manuscript.txt
+sample_manuscript.html
+sample_book.kpf
+tmp_output/
+
+# macOS
+.DS_Store

@@ -36,6 +36,10 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024  # 100MB
 
 
+def _format_image_processing_error(role: str, exc: Exception) -> str:
+    return f"{role.title()} cover processing failed: {str(exc)}"
+
+
 @app.get("/")
 def index():
     return render_template("index.html", profiles=PROFILES.values())
@@ -180,7 +184,19 @@ def preview_cover():
         auto_corrected = False
 
         if not original_validation.valid and auto_fix_covers:
-            corrected_path = auto_correct_cover_to_kdp(original_path, tmp_dir, role=role)
+            try:
+                corrected_path = auto_correct_cover_to_kdp(original_path, tmp_dir, role=role)
+            except Exception as exc:
+                return (
+                    jsonify(
+                        {
+                            "error": _format_image_processing_error(role, exc),
+                            "original": _validation_to_dict(original_validation),
+                        }
+                    ),
+                    400,
+                )
+
             corrected_validation = validate_cover_image(corrected_path, role=role)
             if not corrected_validation.valid:
                 return (
@@ -238,7 +254,11 @@ def _save_optional_image(upload, tmp_dir: Path, prefix: str, auto_fix_covers: bo
             "Enable 'Auto-correct covers to KDP spec' to fix automatically."
         )
 
-    corrected_out = auto_correct_cover_to_kdp(original_out, tmp_dir, role=prefix)
+    try:
+        corrected_out = auto_correct_cover_to_kdp(original_out, tmp_dir, role=prefix)
+    except Exception as exc:
+        raise ValueError(_format_image_processing_error(prefix, exc)) from exc
+
     corrected_validation = validate_cover_image(corrected_out, role=prefix)
     if not corrected_validation.valid:
         corrected_errors = "\n".join([f"- {e}" for e in corrected_validation.errors])

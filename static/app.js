@@ -84,14 +84,18 @@ async function fetchCoverPreview(file, role, autoFixCovers) {
   });
 
   let payload = null;
+  let rawText = "";
   try {
-    payload = await response.json();
+    rawText = await response.text();
+    payload = rawText ? JSON.parse(rawText) : null;
   } catch (_) {
     payload = null;
   }
 
   if (!response.ok) {
-    throw new Error(payload?.error || "Preview request failed.");
+    const fallback =
+      (rawText && rawText.trim()) || `Preview request failed (HTTP ${response.status}).`;
+    throw new Error(payload?.error || fallback);
   }
   return payload;
 }

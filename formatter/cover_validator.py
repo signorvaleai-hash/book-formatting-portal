@@ -42,7 +42,7 @@ def validate_cover_image(path: Path, role: str = "cover") -> CoverValidationResu
             mode = img.mode
             width, height = img.size
             dpi = img.info.get("dpi")
-    except UnidentifiedImageError as exc:
+    except (UnidentifiedImageError, OSError) as exc:
         return CoverValidationResult(
             valid=False,
             errors=[f"{role.title()} image is unreadable: {exc}"],
@@ -138,4 +138,3 @@ def render_cover_report(role: str, result: CoverValidationResult, auto_corrected
         lines.append("- Warnings:")
         lines.extend([f"  * {warn}" for warn in result.warnings])
     return "\n".join(lines)
-
